@@ -16,7 +16,7 @@ namespace Enigma_Emulator {
             machine.addPlug('K', 'H');
 
             // Message encrypt/decrypt example
-            string msg = "ENIGMACRYPTEXAMPLE"; // Should become OLPF
+            string msg = "ENIGMACRYPTEXAMPLE";
             Console.WriteLine("Plain text:\t" + msg);
             string enc = machine.runEnigma(msg);
             Console.WriteLine("Encrypted:\t" + enc);
