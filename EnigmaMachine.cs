@@ -18,7 +18,7 @@ namespace Enigma_Emulator {
         private Rotor rIII;
         private Rotor reflector;
 
-        string alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        private const string alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
         // Rotor class representing one rotor
         private class Rotor {
@@ -58,7 +58,7 @@ namespace Enigma_Emulator {
             
             public void setOuterPosition(int i) {
                 outerPosition = i;
-                outerChar = wiring.ToCharArray()[outerPosition];
+                outerChar = alphabet.ToCharArray()[outerPosition];
             }
 
             public int getOuterPosition() {
@@ -67,12 +67,12 @@ namespace Enigma_Emulator {
 
             public void setOuterChar(char c) {
                 outerChar = c;
-                outerPosition = wiring.IndexOf(outerChar);
+                outerPosition = alphabet.IndexOf(outerChar);
             }
 
             public void step() {
                 outerPosition = (outerPosition + 1) % 26;
-                outerChar = wiring.ToCharArray()[outerPosition];
+                outerChar = alphabet.ToCharArray()[outerPosition];
             }
 
             public bool isInTurnOver() {
@@ -183,13 +183,14 @@ namespace Enigma_Emulator {
             // Scramble with rotors
 
             // First we go all the way through the rotors <--
-            c = rotorMap(c, true);
+            c = rotorMap(c, false);
 
             // Reflect at the end so we don't just unscramble it again when we go back
+            // If the line below is commented out, the cipher will be equal to the message
             c = reflectorMap(c);
 
             // Go back through all the rotors the other way -->
-            c = rotorMap(c, false);
+            c = rotorMap(c, true);
 
             // Plugboard again, from other direction -->
             if (plugBoard.ContainsKey(c)) {
