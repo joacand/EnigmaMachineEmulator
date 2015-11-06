@@ -12,6 +12,7 @@ namespace Enigma_Emulator {
         */
         private Dictionary<Char, Char> plugBoard;
 
+        // The machine has three rotors and a reflector
         private Rotor rI;
         private Rotor rII;
         private Rotor rIII;
@@ -19,24 +20,24 @@ namespace Enigma_Emulator {
 
         string alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-
-        class Rotor {
+        // Rotor class representing one rotor
+        private class Rotor {
             // The current char of the alphabet, and position of it. This char is visible outside the machine
-            public int outerPosition;
-            char outerChar;
+            private int outerPosition;
+            public char outerChar { get; set; }
 
             // The fixed alphabet of the rotor
-            string wiring;
+            private string wiring;
 
             // turnOver is the notch on which letter the rotors turnover point is
-            char turnOver;
+            private char turnOver;
 
             // Ring is the wiring setting relative to the turnover notch and position
             // Basically part of the initialization vector
-            public char ring;
+            public char ring { get; set; }
 
-            public int[] map = new int[26];
-            public int[] revMap = new int[26];
+            public int[] map { get; }
+            public int[] revMap { get; }
 
             public Rotor(string w, char to) {
                 wiring = w;
@@ -45,6 +46,8 @@ namespace Enigma_Emulator {
                 outerChar = wiring.ToCharArray()[outerPosition];
                 ring = 'A'; // A default ring setting
 
+                map = new int[26];
+                revMap = new int[26];
                 // Fill the mapping arrays
                 for (int i = 0; i < 26; i++) {
                     int match = ((int)wiring.ToCharArray()[i]) - 65;
@@ -52,14 +55,14 @@ namespace Enigma_Emulator {
                     revMap[match] = (26 + i - match) % 26;
                 }
             }
-
-            public void setRing(char r) {
-                ring = r;
-            }
-
+            
             public void setOuterPosition(int i) {
                 outerPosition = i;
                 outerChar = wiring.ToCharArray()[outerPosition];
+            }
+
+            public int getOuterPosition() {
+                return outerPosition;
             }
 
             public void setOuterChar(char c) {
@@ -70,10 +73,6 @@ namespace Enigma_Emulator {
             public void step() {
                 outerPosition = (outerPosition + 1) % 26;
                 outerChar = wiring.ToCharArray()[outerPosition];
-            }
-
-            public char getOuterChar() {
-                return outerChar;
             }
 
             public bool isInTurnOver() {
@@ -99,33 +98,28 @@ namespace Enigma_Emulator {
         // Argumentent reverse decides which direction we are scrambling
         private char rotorMap(char c, bool reverse) {
             int cPos = (int)c - 65;
-            if (reverse) {
-                int rPos = (int)rI.ring - 65;
-                int d = rI.revMap[(26 + cPos + rI.outerPosition - rPos) % 26];
-                cPos = (cPos + d) % 26;
-
-                rPos = (int)rII.ring - 65;
-                d = rII.revMap[(26 + cPos + rII.outerPosition - rPos) % 26];
-                cPos = (cPos + d) % 26;
-
-                rPos = (int)rIII.ring - 65;
-                d = rIII.revMap[(26 + cPos + rIII.outerPosition - rPos) % 26];
-                cPos = (cPos + d) % 26;
+            if (!reverse) {
+                cPos = rotorValue(rIII, cPos, reverse);
+                cPos = rotorValue(rII, cPos, reverse);
+                cPos = rotorValue(rI, cPos, reverse);
             } else {
-                int rPos = (int)rIII.ring - 65;
-                int d = rIII.map[(26 + cPos + rIII.outerPosition - rPos) % 26];
-                cPos = (cPos + d) % 26;
-
-                rPos = (int)rII.ring - 65;
-                d = rII.map[(26 + cPos + rII.outerPosition - rPos) % 26];
-                cPos = (cPos + d) % 26;
-
-                rPos = (int)rI.ring - 65;
-                d = rI.map[(26 + cPos + rI.outerPosition - rPos) % 26];
-                cPos = (cPos + d) % 26;
+                cPos = rotorValue(rI, cPos, reverse);
+                cPos = rotorValue(rII, cPos, reverse);
+                cPos = rotorValue(rIII, cPos, reverse);
             }
 
             return alphabet.ToCharArray()[cPos];
+        }
+
+        private int rotorValue(Rotor r, int cPos, bool reverse) {
+            int rPos = (int)r.ring - 65;
+            int d;
+            if (!reverse)
+                d = r.map[(26 + cPos + r.getOuterPosition() - rPos) % 26];
+            else
+                d = r.revMap[(26 + cPos + r.getOuterPosition() - rPos) % 26];
+
+            return (cPos + d) % 26;
         }
 
         // Apply the reflector, the part that comes after the rotors
@@ -149,9 +143,13 @@ namespace Enigma_Emulator {
 
         // Enter the ring settings and initial rotor positions
         public void setSettings(char[] rings, char[] grund) {
-            rI.setRing(rings[0]);
-            rII.setRing(rings[1]);
-            rIII.setRing(rings[2]);
+            if (rings.Length != 3 || grund.Length != 3) {
+                throw new ArgumentException("Invalid argument lengths");
+            }
+
+            rI.ring = Char.ToUpper(rings[0]);
+            rII.ring = Char.ToUpper(rings[1]);
+            rIII.ring = Char.ToUpper(rings[2]);
 
             rI.setOuterChar(grund[0]);
             rII.setOuterChar(grund[1]);
@@ -204,9 +202,15 @@ namespace Enigma_Emulator {
 
         // Add a character pair into the plugboard
         public void addPlug(char c, char cc) {
-            if (c != cc && !plugBoard.ContainsKey(c)) {
-                plugBoard.Add(c, cc);
-                plugBoard.Add(cc, c);
+            if (Char.IsLetter(c) && Char.IsLetter(cc)) {
+                c = Char.ToUpper(c);
+                cc = Char.ToUpper(cc);
+                if (c != cc && !plugBoard.ContainsKey(c)) {
+                    plugBoard.Add(c, cc);
+                    plugBoard.Add(cc, c);
+                }
+            } else {
+                throw new ArgumentException("Invalid character");
             }
         }
     }
