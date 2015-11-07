@@ -13,9 +13,7 @@ namespace Enigma_Emulator {
         private Dictionary<Char, Char> plugBoard;
 
         // The machine has three rotors and a reflector
-        private Rotor rI;
-        private Rotor rII;
-        private Rotor rIII;
+        private Rotor[] rotors;
         private Rotor reflector;
 
         private const string alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -32,6 +30,8 @@ namespace Enigma_Emulator {
             // turnOver is the notch on which letter the rotors turnover point is
             private char turnOver;
 
+            public string name { get; }
+
             // Ring is the wiring setting relative to the turnover notch and position
             // Basically part of the initialization vector
             public char ring { get; set; }
@@ -39,12 +39,13 @@ namespace Enigma_Emulator {
             public int[] map { get; }
             public int[] revMap { get; }
 
-            public Rotor(string w, char to) {
+            public Rotor(string w, char to, string n) {
                 wiring = w;
                 turnOver = to;
                 outerPosition = 0;
                 outerChar = wiring.ToCharArray()[outerPosition];
                 ring = 'A'; // A default ring setting
+                name = n;
 
                 map = new int[26];
                 revMap = new int[26];
@@ -55,7 +56,7 @@ namespace Enigma_Emulator {
                     revMap[match] = (26 + i - match) % 26;
                 }
             }
-            
+
             public void setOuterPosition(int i) {
                 outerPosition = i;
                 outerChar = alphabet.ToCharArray()[outerPosition];
@@ -80,18 +81,20 @@ namespace Enigma_Emulator {
             }
         }
 
-        private void rotateRotors(Rotor I, Rotor II, Rotor III) {
-            if (II.isInTurnOver()) {
-                // If rotor II is on turnOver, all rotors step
-                I.step();
-                II.step();
-            } else if (III.isInTurnOver()) {
-                // If rotor III is on turnOver, the two rotors to the right step
-                II.step();
-            }
+        private void rotateRotors(Rotor[] r) {
+            if (r.Length == 3) {
+                if (r[1].isInTurnOver()) {
+                    // If rotor II is on turnOver, all rotors step
+                    r[0].step();
+                    r[1].step();
+                } else if (r[2].isInTurnOver()) {
+                    // If rotor III is on turnOver, the two rotors to the right step
+                    r[1].step();
+                }
 
-            // Rotor III always steps
-            III.step();
+                // Rotor III always steps
+                r[2].step();
+            }
         }
 
         // Apply the rotor scramble to character using all three rotors
@@ -99,13 +102,13 @@ namespace Enigma_Emulator {
         private char rotorMap(char c, bool reverse) {
             int cPos = (int)c - 65;
             if (!reverse) {
-                cPos = rotorValue(rIII, cPos, reverse);
-                cPos = rotorValue(rII, cPos, reverse);
-                cPos = rotorValue(rI, cPos, reverse);
+                for (int i = rotors.Length-1; i >= 0; i--) {
+                    cPos = rotorValue(rotors[i], cPos, reverse);
+                }
             } else {
-                cPos = rotorValue(rI, cPos, reverse);
-                cPos = rotorValue(rII, cPos, reverse);
-                cPos = rotorValue(rIII, cPos, reverse);
+                for (int i = 0; i < rotors.Length; i++) {
+                    cPos = rotorValue(rotors[i], cPos, reverse);
+                }
             }
 
             return alphabet.ToCharArray()[cPos];
@@ -135,25 +138,53 @@ namespace Enigma_Emulator {
 
             // Notch and alphabet are fixed on the rotor
             // First argument is alphabet, second is the turnover notch
-            rI = new Rotor("EKMFLGDQVZNTOWYHXUSPAIBRCJ", 'Q');
-            rII = new Rotor("AJDKSIRUXBLHWTMCQGZNPYFVOE", 'E');
-            rIII = new Rotor("BDFHJLCPRTXVZNYEIWGAKMUSQO", 'V');
-            reflector = new Rotor("YRUHQSLDPXNGOKMIEBFZCWVJAT", 'B');
+            Rotor rI = new Rotor("EKMFLGDQVZNTOWYHXUSPAIBRCJ", 'Q', "I");
+            Rotor rII = new Rotor("AJDKSIRUXBLHWTMCQGZNPYFVOE", 'E', "II");
+            Rotor rIII = new Rotor("BDFHJLCPRTXVZNYEIWGAKMUSQO", 'V', "III");
+            rotors = new Rotor[] { rI, rII, rIII }; // Default ordering of rotors
+            reflector = new Rotor("YRUHQSLDPXNGOKMIEBFZCWVJAT", 'B', "");
         }
 
         // Enter the ring settings and initial rotor positions
         public void setSettings(char[] rings, char[] grund) {
-            if (rings.Length != 3 || grund.Length != 3) {
+            if (rings.Length != rotors.Length || grund.Length != rotors.Length) {
                 throw new ArgumentException("Invalid argument lengths");
             }
 
-            rI.ring = Char.ToUpper(rings[0]);
-            rII.ring = Char.ToUpper(rings[1]);
-            rIII.ring = Char.ToUpper(rings[2]);
+            for (int i = 0; i < rotors.Length; i++) {
+                rotors[i].ring = Char.ToUpper(rings[i]);
+                rotors[i].setOuterChar(Char.ToUpper(grund[i]));
+            }
+        }
 
-            rI.setOuterChar(grund[0]);
-            rII.setOuterChar(grund[1]);
-            rIII.setOuterChar(grund[2]);
+        public void setSettings(char[] rings, char[] grund, string rotorOrder) {
+            Rotor rI = null;
+            Rotor rII = null;
+            Rotor rIII = null;
+
+            // Get the current ordering
+            for (int i = 0; i < rotors.Length; i++) {
+                if (rotors[i].name == "I")
+                    rI = rotors[i];
+                if (rotors[i].name == "II")
+                    rII = rotors[i];
+                if (rotors[i].name == "III")
+                    rIII = rotors[i];
+            }
+
+            string[] order = rotorOrder.Split('-');
+
+            // Set the new ordering
+            for (int i = 0; i < order.Length; i++) {
+                if (order[i] == "I")
+                    rotors[i] = rI;
+                if (order[i] == "II")
+                    rotors[i] = rII;
+                if (order[i] == "III")
+                    rotors[i] = rIII;
+            }
+
+            setSettings(rings, grund);
         }
 
         // Encrypts or decrypts a message
@@ -173,7 +204,7 @@ namespace Enigma_Emulator {
         private char encryptChar(char c) {
 
             // Rotate the rotors before scrambling
-            rotateRotors(rI, rII, rIII);
+            rotateRotors(rotors);
 
             // Into plugboard from keyboard <--
             if (plugBoard.ContainsKey(c)) {
