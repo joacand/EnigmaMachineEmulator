@@ -11,7 +11,8 @@ namespace Enigma_Emulator {
             char[] rings = new char[] { 'V', 'E', 'S' }; // Ringstellung - Ring settings
             char[] grund = new char[] { 'F', 'V', 'E' }; // Grundstellung - Initial rotor settings
             string order = "I-II-III"; // Ordering of rotors. Examples: "I-II-III", "II-I-III", "III-II-I"
-            machine.setSettings(rings, grund, order);
+            char reflector = 'B';
+            machine.setSettings(rings, grund, order, reflector);
 
             //Plugboard settings example
             machine.addPlug('K', 'H');
@@ -24,7 +25,7 @@ namespace Enigma_Emulator {
             Console.WriteLine("Encrypted:\t" + enc);
 
             // Reset the settings before decrypting!
-            machine.setSettings(rings, grund, order);
+            machine.setSettings(rings, grund, order, reflector);
 
             string dec = machine.runEnigma(enc);
             Console.WriteLine("Decrypted:\t" + dec);

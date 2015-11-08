@@ -18,6 +18,15 @@ namespace Enigma_Emulator {
 
         private const string alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
+        // Rotor and reflectors. These configurations are constant and the same on every Enigma machine
+        private const string rotorIconf = "EKMFLGDQVZNTOWYHXUSPAIBRCJ";
+        private const string rotorIIconf = "AJDKSIRUXBLHWTMCQGZNPYFVOE";
+        private const string rotorIIIconf = "BDFHJLCPRTXVZNYEIWGAKMUSQO";
+
+        private const string reflectorAconf = "EJMZALYXVBWFCRQUONTSPIKHGD";
+        private const string reflectorBconf = "YRUHQSLDPXNGOKMIEBFZCWVJAT";
+        private const string reflectorCconf = "FVPJIAOYEDRZXWGCTKUQSBNMHL";
+
         // Rotor class representing one rotor
         private class Rotor {
             // The current char of the alphabet, and position of it. This char is visible outside the machine
@@ -40,15 +49,22 @@ namespace Enigma_Emulator {
             public int[] revMap { get; }
 
             public Rotor(string w, char to, string n) {
-                wiring = w;
                 turnOver = to;
                 outerPosition = 0;
-                outerChar = wiring.ToCharArray()[outerPosition];
+
                 ring = 'A'; // A default ring setting
                 name = n;
 
                 map = new int[26];
                 revMap = new int[26];
+
+                setWiring(w);
+            }
+
+            public void setWiring(string newW) {
+                wiring = newW;
+                outerChar = wiring.ToCharArray()[outerPosition];
+
                 // Fill the mapping arrays
                 for (int i = 0; i < 26; i++) {
                     int match = ((int)wiring.ToCharArray()[i]) - 65;
@@ -102,7 +118,7 @@ namespace Enigma_Emulator {
         private char rotorMap(char c, bool reverse) {
             int cPos = (int)c - 65;
             if (!reverse) {
-                for (int i = rotors.Length-1; i >= 0; i--) {
+                for (int i = rotors.Length - 1; i >= 0; i--) {
                     cPos = rotorValue(rotors[i], cPos, reverse);
                 }
             } else {
@@ -138,11 +154,31 @@ namespace Enigma_Emulator {
 
             // Notch and alphabet are fixed on the rotor
             // First argument is alphabet, second is the turnover notch
-            Rotor rI = new Rotor("EKMFLGDQVZNTOWYHXUSPAIBRCJ", 'Q', "I");
-            Rotor rII = new Rotor("AJDKSIRUXBLHWTMCQGZNPYFVOE", 'E', "II");
-            Rotor rIII = new Rotor("BDFHJLCPRTXVZNYEIWGAKMUSQO", 'V', "III");
+            Rotor rI = new Rotor(rotorIconf, 'Q', "I");
+            Rotor rII = new Rotor(rotorIIconf, 'E', "II");
+            Rotor rIII = new Rotor(rotorIIIconf, 'V', "III");
             rotors = new Rotor[] { rI, rII, rIII }; // Default ordering of rotors
-            reflector = new Rotor("YRUHQSLDPXNGOKMIEBFZCWVJAT", 'B', "");
+            reflector = new Rotor(reflectorAconf, ' ', "");
+        }
+
+        public void setReflector(char conf) {
+            if (conf != 'A' && conf != 'B' && conf != 'C') {
+                throw new ArgumentException("Invalid argument");
+            }
+
+            string wiring = "";
+            switch (conf) {
+                case 'A':
+                    wiring = reflectorAconf;
+                    break;
+                case 'B':
+                    wiring = reflectorBconf;
+                    break;
+                case 'C':
+                    wiring = reflectorCconf;
+                    break;
+            }
+            reflector.setWiring(wiring);
         }
 
         // Enter the ring settings and initial rotor positions
@@ -185,6 +221,11 @@ namespace Enigma_Emulator {
             }
 
             setSettings(rings, grund);
+        }
+
+        public void setSettings(char[] rings, char[] grund, string rotorOrder, char reflectorConf) {
+            setReflector(reflectorConf);
+            setSettings(rings, grund, rotorOrder);
         }
 
         // Encrypts or decrypts a message

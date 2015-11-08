@@ -6,10 +6,9 @@ An Enigma machine emulator written in C#.
 The project models the Enigma I, from ~1930.
 
 ## Features
-All the features the real Enigma I had. Plugboard, rotors with arbitrary order, and reflectors. Produces the same output as the real machine.
+All the features the real Enigma I had. Plugboard, rotors with arbitrary order, and three available reflectors. Produces the same output as the real machine.
 
 ### Todo
-* Currently only the B reflector is available. It should be possible to have A and C as well.
 * Input/output with settings and message to be encrypted, instead of having to enter the message/settings in the source code.
 
 ### Future work
