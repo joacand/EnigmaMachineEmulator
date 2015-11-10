@@ -8,7 +8,6 @@ namespace Enigma_Emulator {
     class EnigmaMachine {
         /* Enigma Machine
            Modelled after Enigma I, from ~1930
-           Work in progress
         */
         private Dictionary<Char, Char> plugBoard;
 
@@ -253,7 +252,6 @@ namespace Enigma_Emulator {
             }
 
             // Scramble with rotors
-
             // First we go all the way through the rotors <--
             c = rotorMap(c, false);
 

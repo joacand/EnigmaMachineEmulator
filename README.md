@@ -9,12 +9,15 @@ The project models the Enigma I, from ~1930.
 All the features the real Enigma I had. Plugboard, rotors with arbitrary order, and three available reflectors. Produces the same output as the real machine.
 
 ### Todo
-* Input/output with settings and message to be encrypted, instead of having to enter the message/settings in the source code.
+* Improve the settings query in Program.cs
+    * Make it fail safe
+    * Make the code prettier
 
 ### Future work
 * Make the machine compatible with the later Enigma models, M3 and M4.
     * Expand the machine with more rotors (M3 and M4 had up to eight).
     * Expand the machine with more reflectors (Beta and Gamma)
+* Translate the code into JavaScript and make a web version of the machine.
 
 ### References and thanks
 Other simulators that helped in the research and when testing if the output was correct:
